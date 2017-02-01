@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style type="text/css">
+ body{font:medium Open Sans,Arial,sans-serif}
+ .ui-autocomplete {
+    border-radius: 0px;
+}
+.ui-autocomplete.source:hover {
+    background: #454545;
+}
+
+.ui-menu .ui-menu-item a{
+    height:24px;
+font-size:16px;}
+
+
+</style>
+
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.js"></script>
+
+
+<h1>Добавить расходники и запчасти</h1>
+<form enctype=multipart/form-data method=POST name="add_spares">
+    {{form.hidden_tag()}}
+    <p>
+        Наименование оборудования<br>
+        {{form.name(size=69)}}<br>
+    </p>
+
+    <p>
+        Тип оборудования <br>
+        {{form.type}}
+    </p>
+    <p>
+        Местоположение <br>
+        {{form.location(size=69)}}
+    </p>
+    <p>
+        Количество (только число) <br>
+        {{form.count}}
+    </p>
+    <p>
+        Комментарий <br>
+        {{form.comment(cols="80", rows="5")}}
+    </p>
+    
+    <p>
+        Штрихкод (только цифры) <br>
+        {{form.barcode(size=69)}}
+    </p>
+    <p>
+        Изображение (bmp,jpg,jpeg,png)<br>
+         {{ form.image }}
+
+    </p>
+
+
+    <p><input type="submit" value="Добавить"></p>
+</form>
+
+
+
+<script type="text/javascript">
+
+$(function() {
+    $("#name").autocomplete({
+        source:function(request, response) {
+            $.getJSON("{{url_for('autocomplete')}}",{
+                q: request.term, // in flask, "q" will be the argument to look for using request.args
+            }, function(data) {
+                response(data.matching_results); // matching_results from jsonify
+            });
+        },
+        minLength: 2,
+        select: function(event, ui) {
+            console.log(ui.item.value);
+        }
+    });
+})
+
+</script>
+
+{% endblock %}
+

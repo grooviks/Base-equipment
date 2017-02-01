@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+<h1>Весь список расходников и запчастей</h1>
+{% block content %}
+    {% for type in types %}
+        <table  width="70%"  border="1">
+            <col width="25%">
+            <col width="1%">
+            <col width="30%;">
+            <col width="10%">
+            <caption> <h2>{{type}}</h2> </caption>
+            <tr>
+                <th>Наименование</th>
+                <th>Кол-во</th>
+                <th>Местоположение</th>
+                <th>Штрих-код</th>
+            </tr>
+            {% for spare in spares %}
+                {% if spare.type == type %}
+                    <tr>
+                        <td><a href="{{ url_for('spare', id = spare.id) }}">{{spare.name}} </a> </td>
+                        <td>{{spare.count}} </td>
+                        <td>{{spare.location}} </td>
+                        <td>{{spare.barcode}}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+         </table>
+    {% endfor %}
+
+
+{% endblock %}
