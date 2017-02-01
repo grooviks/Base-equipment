@@ -21,3 +21,18 @@ include/*
 
 env/
 
+templates/
+templates/*
+
+static/
+static/*
+
+__pycache__/
+__pycache__/*
+
+pip-selfcheck.json
+
+include/
+include/*
+
+automium_web.wsgi
