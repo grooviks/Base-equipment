@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+<h1>Поиск</h1>
+{% block content %}
+<form method=POST enctype=multipart/form-data name="image_file"> 
+    <p>
+        {{ upload_form.image }}
+
+    </p>
+      <input type=submit value=Upload>
+</form>
+
+{% endblock %}
