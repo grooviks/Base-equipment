@@ -4,6 +4,8 @@
 lib/
 lib/*
 
+lib64
+
 *.py[cod]
 *.pyc
 
@@ -21,11 +23,13 @@ include/*
 
 env/
 
-templates/
-templates/*
+/templates/
+/templates/*
 
-static/
-static/*
+/static/
+/static/*
+
+spare_img/*.jpeg
 
 __pycache__/
 __pycache__/*
