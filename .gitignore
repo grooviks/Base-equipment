@@ -39,4 +39,6 @@ pip-selfcheck.json
 include/
 include/*
 
+db_repository/versions/*
+
 automium_web.wsgi

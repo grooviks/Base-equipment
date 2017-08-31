@@ -47,6 +47,29 @@ class spares(db.Model):
         imgname = str(self.id) + '.jpeg' 
         return os.path.join('images/spares_img',imgname) \
         if os.path.exists(os.path.join(UPLOAD_FOLDER,'spares_img', imgname)) else 'images/no_img.jpg'
+
+
+class devices(db.Model):
+    __tablename__ = 'devices'
+    id = db.Column(db.INTEGER, primary_key=True)
+    description = db.Column(db.VARCHAR(300))
+    type = db.Column(db.VARCHAR(200))
+    comment = db.Column(db.TEXT)
+    number = db.Column(db.INTEGER)
+    owner = db.Column(db.VARCHAR(300))
+    ip = db.Column(db.VARCHAR(300))
+    id_network =  db.Column(db.Integer, db.ForeignKey('networks.id'))
+
+
+
+class networks(db.Model):
+    __tablename__ = 'networks'
+    id = db.Column(db.INTEGER, primary_key=True)
+    description = db.Column(db.VARCHAR(300))
+    name = db.Column(db.VARCHAR(300))
+    mask = db.Column(db.INTEGER)
+    devices = db.relationship('devices', backref = 'networks', lazy = 'dynamic')
+
         
             
         
