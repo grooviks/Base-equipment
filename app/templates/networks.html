@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+<h1>Сети "МАТОРИН"</h1>
+{% block content %}
+    {% for network in networks %}   
+        <table  width="70%"  border="1">
+            <col width="30%">
+            <col width="70%">
+
+            <caption> <h2>{{network.name}}</h2> </caption>
+            <tr>
+                <th>Подсеть</th>
+                <th>Дополнительно</th>
+            </tr>
+            
+                <tr>
+                        <td><a href="{{ url_for('network', id = network.id) }}">{{network.net}} </a> </td>
+                        <td>{{network.description}} </td>
+                </tr>
+        </table>
+    {% endfor %}
+    
+
+
+{% endblock %}

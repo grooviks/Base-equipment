@@ -65,6 +65,7 @@ class devices(db.Model):
 class networks(db.Model):
     __tablename__ = 'networks'
     id = db.Column(db.INTEGER, primary_key=True)
+    net = db.Column(db.VARCHAR(300))
     description = db.Column(db.VARCHAR(300))
     name = db.Column(db.VARCHAR(300))
     mask = db.Column(db.INTEGER)
