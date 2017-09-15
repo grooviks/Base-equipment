@@ -13,31 +13,33 @@
 
 .ui-menu .ui-menu-item a{
     height:24px;
-font-size:16px;}
+    font-size:16px;}
 
-
+span.required {
+    color: red;
+}
 </style>
 
 <h1>Добавить новую подсеть</h1>
 <form enctype=multipart/form-data method=POST name="add_network">
     {{form.hidden_tag()}}
-    <p>
+    <p><span class="required">*</span>
         Наименование оборудования<br>
         {{form.name(size=69)}}<br>
     </p>
 
-    <p> 
+    <p> <span class="required">*</span>
         Маска <br>
-        {{form.mask}}
+        {{form.cidr}}
     </p>
-    <p> 
+    <p> <span class="required">*</span>
         Подсеть <br>
         {{form.net}}
     </p>
 
     <p>
         Комментарий <br>
-        {{form.description(cols="80", rows="5")}}
+        {{form.description(cols="71", rows="5")}}
     </p>
     
 

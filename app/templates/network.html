@@ -2,7 +2,105 @@
 
 {% block content %}
 
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<link href="{{ url_for('static', filename = 'css/devtables.css') }}" rel="stylesheet">
+
+<table>
+	<tr >
+		<th>IP адрес</th>
+        <th>Тип оборудования</th>
+        <th>Описание</th>
+        <th>Пользователь</th>
+        <th>Инв. номер</th>
+        <th>Дополнительно</th>
+    </tr>
+     {% for device in devices %}
+    <tr>
+    	<td>{{device.ip}}</td>	
+        {% if device.type == None %} 
+        {% set dev_type = '' %}
+        {% else %}
+        {% set dev_type = device.type %}
+        {% endif %}
+        <td>   {{form.type(id="type%s"%device.id, class_="input") | replace('value="%s"'%dev_type, 'selected value="%s"'%dev_type) | safe}}</td>
+
+        {% if device.description == None %} 
+        {% set dev_desc = '' %}
+        {% else %}
+        {% set dev_desc = device.description %}
+        {% endif %}
+    	<td>{{form.description(class_="input", id="desc%s"%device.id, value=dev_desc)}}</td>
+        
+    	
+        {% if device.owner == None %} 
+        {% set dev_owner = '' %}
+        {% else %}
+        {% set dev_owner = device.owner %}
+        {% endif %}
+        <td>{{form.owner(class_="input", id="ownr%s"%device.id, value=dev_owner)}}</td>
+
+        {% if device.number == None%} 
+        {% set dev_nubm = '' %}
+        {% else %}
+        {% set dev_numb = device.number %}
+        {% endif %}
+        <td>{{form.number(class_="input", id="numb%s"%device.id, value=dev_numb,  placeholder="Только цифры")}}</td>
+
+        {% if device.comment == None%} 
+        {% set dev_comm = '' %}
+        {% else %}
+        {% set dev_comm = device.comment %}
+        {% endif %}
+        <td>{{form.comment(class_="input", id="comm%s"%device.id, value=dev_comm)}}</td>
 
 
+    </tr>  
+
+    {% endfor %}
+</table>
+
+
+<script>
+
+$( '.input' ).on('blur keyup',  function(event){
+
+
+            var id = $(this).attr("id");
+            var name = $(this).attr("name");
+            var val = $(this).val();
+
+            if(event.keyCode==13){
+                $(event.target).parents('td').next().find('.input').first().focus();
+                event.preventDefault();
+            }
+            
+            if (id.indexOf("numb") + 1) { //если id поле ввода номера то проверяем на ввод числа
+                if (this.value.match(/[^0-9]/g)) {
+                        //this.value = this.value.replace(/[^0-9]/g, '');
+                        this.value = '';
+                        return ;
+                }
+            }
+
+
+            $.ajax({
+                type: "POST",
+                url: "/edit_device",
+                data: { 'id' :  id , 'name' : name, 'value' : val},
+                type: 'POST',
+                success: function(response) {
+                    //var json = jQuery.parseJSON(response)
+                    //$(id).html(json.resp)
+                    console.log(response);
+                },
+                error: function(error) {
+                    console.log(error);
+            }
+        });
+});
+
+
+</script>
 
 {% endblock %}
+

@@ -5,6 +5,11 @@ body
     
 }
 
+span.required {
+    color: red;
+}
+
+
 #primary_nav_wrap
 {
     margin-top:15px
@@ -81,4 +86,3 @@ body
 {
     display:block
 }
-

@@ -1,5 +1,6 @@
 from app import db
 import json, os 
+from app import ipcalc
 from config import UPLOAD_FOLDER
 #from sqlalchemy.dialects.mysql import INTEGER
 
@@ -37,6 +38,7 @@ class spares(db.Model):
 
     def __repr__(self):
         return self.name
+        
     #добавил для вывода в JSON но не уверен что это понадобится, так как были косяки с ним при возврате в jquery
     @property
     def json(self):
@@ -61,15 +63,39 @@ class devices(db.Model):
     id_network =  db.Column(db.Integer, db.ForeignKey('networks.id'))
 
 
-
 class networks(db.Model):
     __tablename__ = 'networks'
     id = db.Column(db.INTEGER, primary_key=True)
     net = db.Column(db.VARCHAR(300))
     description = db.Column(db.VARCHAR(300))
     name = db.Column(db.VARCHAR(300))
-    mask = db.Column(db.INTEGER)
+    cidr = db.Column(db.INTEGER)
     devices = db.relationship('devices', backref = 'networks', lazy = 'dynamic')
+    
+    def __repr__(self):
+        return self.name
+
+    @property
+    def hosts(self):
+        return ipcalc.hosts(self)
+    @property
+    def mask(self): 
+        return ".".join([str(octet) for octet in ipcalc.mask(self)])
+    @property
+    def first_addr(self):
+        return ".".join([str(octet) for octet in ipcalc.first_addr(self)])
+    @property
+    def last_addr(self):
+        return ".".join([str(octet) for octet in ipcalc.last_addr(self)])
+    @property
+    def network(self):
+        return ".".join([str(octet) for octet in ipcalc.network(self)])
+        
+
+
+
+
+
 
         
             

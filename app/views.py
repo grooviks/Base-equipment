@@ -1,12 +1,13 @@
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, json
 from app import app, db
-from app.forms import AddSpareForm, SearchForm, AddNetworkForm
+from app.forms import AddSpareForm, SearchForm, AddNetworkForm, DeviceForm
 from app.models import spares, networks, devices
 from flask import jsonify
 from werkzeug import secure_filename
 from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
 import os
 from PIL import Image
+from app import ipcalc
 
 @app.route('/')
 @app.route('/index')
@@ -16,7 +17,6 @@ def index():
 @app.route('/add_spares', methods = ['GET', 'POST'])
 def add_spares():
     form = AddSpareForm()
-    print (form.validate_on_submit())
     if form.validate_on_submit():
         #spare_name = Spares.name.filter(form.name.data)
         spare = spares(name = form.name.data,
@@ -25,15 +25,16 @@ def add_spares():
                        count = form.count.data,
                        location = form.location.data, 
                        barcode = form.barcode.data )
-        if db.session.add(spare): 
-            flash('Не заполнены обязательные поля!!! ', 'warning')
+        db.session.add(spare)
         db.session.commit()
-        #загружаем изображение в директорию, если его хотели загрузить
+        #загружаем изображение в директорию, если его хотели добавить
         if form.image.data:
             print(type(form.image.data))
             print(upload_image(form.image.data, str(spare.id)))
         flash('Оборудование добавлено!!! ', 'success')
         return redirect(url_for('index'))
+    elif request.method == 'POST':        
+        flash('Не заполнены обязательные поля!!! ', 'warning')
     return render_template('add_spares.html',
                             form = form)
 
@@ -63,7 +64,7 @@ def spare(id):
             spare.barcode = form.barcode.data 
             if form.image.data:
                 upload_image(form.image.data, str(spare.id))
-            print (db.session.commit())            
+            db.session.commit()
             flash('Изменения сохранены!!! ', 'success')
         elif (request.form['submit'] == 'Удалить'):
             db.session.delete(spare)
@@ -77,7 +78,7 @@ def spare(id):
         flash('Не заполнены обязательные поля!!! ', 'warning')
     return render_template('spare.html',
                             spare = spare, 
-                           form = form)
+                           form = form);
 
 @app.route('/autocomplete',methods=['GET', 'POST'])
 def autocomplete():
@@ -93,9 +94,11 @@ def autocomplete():
 #                    form=form)
 
 def allowed_file(filename):
+    '''проверка имени и расширения файла'''
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 def upload_image(file,id):
+    '''загрузка изображения, возвращает путь к файлу'''
     if allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(UPLOAD_FOLDER,filename)
@@ -107,41 +110,124 @@ def upload_image(file,id):
         return filepath
     return None
 
+def add_ip_in_db(network): 
+    ''' заполняем бд devices записями с IP новой подсети'''
+    for ip in ipcalc.range_ip(network): 
+        try: 
+            device = devices(description = None,
+            type = None,
+            comment = None,
+            number = None, 
+            owner = None,
+            ip = ip,
+            id_network = network.id
+            )
+            db.session.add(device) 
+        except: 
+            return False
+    try:
+        db.session.commit() 
+    except: 
+        return False
+    return True
+
+        
+
+def del_ip_in_db(id_network): 
+    ''' удаляем из БД Devices записи приндлежащие подсети '''
+    devices_list = devices.query.filter_by(id_network = id_network).all()
+    try: 
+        for device in devices_list: 
+            db.session.delete(device)
+    except: 
+        return False
+    try:
+        db.session.commit()
+    except:
+        return False
+    return True
+
+def del_network(id_network): 
+    ''' удаляем из БД networks подсеть по id '''
+    network = networks.query.filter_by(id = id_network).first()
+    if del_ip_in_db(id_network): 
+        db.session.delete(network)
+        db.session.commit()
+        return True
+    return False
+
+
+
 @app.route('/all_networks', methods = ['GET', 'POST'])
 def all_networks():
     all_networks = networks.query.all()
-    #получаем множество типов расходников, чтобы выводить их сортированными
-    #types = {spare.type for spare in all_spares}
-    for i in all_networks: 
-        print (i.id)
+    if request.method == 'POST' :
+        for key, val in request.form.items():
+            if val == 'Удалить': 
+                del_network(key)
+                return redirect(url_for('all_networks'))
+            #elif val == 'Редактировать':
+            #    return redirect(url_for('network', id=key)) 
+            else:
+                flash('Неизвестный запрос', 'warning')
     return render_template('networks.html',
                            networks = all_networks)
 
-def ip_calc():
-    return 0
+
 
 @app.route('/add_network', methods = ['GET', 'POST'])
 def add_network():
     form = AddNetworkForm()
     if form.validate_on_submit():
         #spare_name = Spares.name.filter(form.name.data)
-        network = networks(name = form.name.data,
-        description = form.description.data,
-        mask = form.mask.data,
-        net = form.net.data)
-        if db.session.add(network): 
-            if db.session.commit(): 
-                flash('Подсеть добавлена!!! ', 'success')
+        if ipcalc.check_ip(form.net.data): 
+            netw = networks(name = form.name.data,
+            description = form.description.data,
+            cidr = form.cidr.data,
+            net = form.net.data)
+            #если вписали не начало подсети а какой-нить ip , то берем всё равно подсеть 
+            netw.net = netw.network
+            db.session.add(netw) 
+            db.session.commit() 
+            flash('Подсеть добавлена!!! ', 'success')
+            if add_ip_in_db(netw): 
                 return redirect(url_for('all_networks'))
+            else: 
+                flash('Таблица IP адресов не создана!! ', 'danger')         
         else: 
-            flash('Не заполнены обязательные поля!!! ', 'warning')
+            flash('Введен некоректный адрес подсети!!! ', 'warning')
+    elif request.method == 'POST':        
+        flash('Не заполнены обязательные поля!!! ', 'warning')
     return render_template('add_network.html',
                             form = form)
 
 
 @app.route('/network/<id>', methods = ['GET', 'POST'])
 def network(id):
+
+    form = DeviceForm()
     network = networks.query.filter_by(id = id).first()
-    print (network.net)
+    devices_list = devices.query.filter_by(id_network = id).all()
     return render_template('network.html',
-                            network = network)
+                            network = network, 
+                            devices = devices_list,
+                            form = form
+                            )
+
+
+@app.route('/edit_device', methods = ['GET', 'POST'])
+def edit_device():
+    ''' получает POST запросом id оборудования в БД , меняемое свойство и значение его 
+        проверяет изменилось ли оно , если да то записываем в БД '''
+    dev_id = request.form['id'][4:]
+    dev_property = request.form['name']
+    value = request.form['value']
+    print(dev_id, dev_property, value)
+    device = devices.query.filter_by(id = dev_id).first()
+    if getattr(device, dev_property) != value:
+        setattr(device, dev_property, value)
+        db.session.commit()
+        print(device.number)
+        return json.dumps({'resp' : 'change ok'})
+    print( device.type, device.owner)
+    return json.dumps({'resp': 'not change'})

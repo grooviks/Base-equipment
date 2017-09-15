@@ -1,21 +1,38 @@
 {% extends "base.html" %}
 <h1>Сети "МАТОРИН"</h1>
-{% block content %}
-    {% for network in networks %}   
-        <table  width="70%"  border="1">
-            <col width="30%">
-            <col width="70%">
 
-            <caption> <h2>{{network.name}}</h2> </caption>
-            <tr>
-                <th>Подсеть</th>
-                <th>Дополнительно</th>
-            </tr>
-            
+{% block content %}
+
+<style type="text/css">
+table {
+    
+    /*border-style: hidden;*/
+   /* border: 3px solid black;*/
+    border-collapse: collapse;
+}
+
+caption {
+     /*border: 2px solid lightgray;*/
+     border-bottom: 2px solid; 
+    /* border-left: 2px solid lightgray; */
+    /* border-top: 2px solid ;*/
+}
+</style>
+    {% for network in networks %}   
+        <table width="50%" >
+            <col width="30%">
+            <col width="30%">
+            <col width="10%">
+
+            <caption> <h4>{{network.name}}</h4> </caption>
+           
                 <tr>
-                        <td><a href="{{ url_for('network', id = network.id) }}">{{network.net}} </a> </td>
-                        <td>{{network.description}} </td>
+                        <td> <a href="{{ url_for('network', id = network.id) }}">{{network.net}}/{{network.cidr}} </a> </td>
+                        <td> {{network.description}} </td>                   
+                        <!--<td> <form action="" method="post"> <input type="submit"  name="{{ network.id }}" value="Редактировать")"></input> </form> </td>-->
+                        <td>  <form action="" method="post"><input type="submit"  name="{{ network.id }}" value="Удалить" onclick="return confirm('Применить?!')"></input></form></td>
                 </tr>
+
         </table>
     {% endfor %}
     
