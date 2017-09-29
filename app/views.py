@@ -1,13 +1,15 @@
 from flask import render_template, flash, redirect, url_for, request, json
 from app import app, db
-from app.forms import AddSpareForm, SearchForm, AddNetworkForm, DeviceForm
-from app.models import spares, networks, devices
+from app.forms import AddSpareForm, SearchForm, AddNetworkForm, DeviceForm, SearchForm
+from app.models import spares, networks, devices, users
 from flask import jsonify
 from werkzeug import secure_filename
-from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER_IMG, UPLOAD_FOLDER_FILES
 import os
 from PIL import Image
 from app import ipcalc
+from app import excel
+
 
 @app.route('/')
 @app.route('/index')
@@ -87,11 +89,29 @@ def autocomplete():
     results = [x.name for x in query.all()]
     return jsonify(matching_results=results)
 
+#переделать в одну функцию с autocomple
+@app.route('/autocomplete_users',methods=['GET', 'POST'])
+def autocomplete_users():
+    search = request.args.get('q')
+    query = users.query.filter(users.lastname.like('%' + str(search) + '%')).all()
+    results = ["{} {} {}".format(x.lastname, x.name, x.secondname) for x in query]
+    return jsonify(matching_results=results)
+
 #@app.route('/search',methods = ['GET', 'POST'])
-#def search():
-#    form = SearchForm(request.form)
-#    return render_template('search.html',
-#                    form=form)
+def search(content):
+    form = DeviceForm()
+    #ПЕРЕПИСАТЬ! делаем запрос по каждому полю и добавляем в результирующий список
+    results = devices.query.filter(devices.number.like('%' + str(content) + '%')).order_by("id").all()
+    results.extend(devices.query.filter(devices.owner.like('%' + str(content) + '%')).order_by("id").all())
+    results.extend(devices.query.filter(devices.description.like('%' + str(content) + '%')).order_by("id").all())
+    #отбираем подсети только которые нашлись в поиске , чтобы вывод был красивым
+    all_networks = {network for network in networks.query.all() for dev in results if dev.id_network == network.id}
+    if len(results) == 0: 
+        flash('Ничего не найдено', 'warning')
+    return render_template('search_dev_result.html',
+                    results = results,
+                    form = form, 
+                    networks = all_networks)
 
 def allowed_file(filename):
     '''проверка имени и расширения файла'''
@@ -101,12 +121,12 @@ def upload_image(file,id):
     '''загрузка изображения, возвращает путь к файлу'''
     if allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        filepath = os.path.join(UPLOAD_FOLDER,filename)
+        filepath = os.path.join(UPLOAD_FOLDER_IMG,filename)
         file.save(filepath)
         im = Image.open(filepath)
-        filepath = os.path.join(UPLOAD_FOLDER,'spares_img',id +'.jpeg')
+        filepath = os.path.join(UPLOAD_FOLDER_IMG,'spares_img',id +'.jpeg')
         im.save(filepath)
-        os.remove(os.path.join(UPLOAD_FOLDER,filename))
+        os.remove(os.path.join(UPLOAD_FOLDER_IMG,filename))
         return filepath
     return None
 
@@ -131,8 +151,6 @@ def add_ip_in_db(network):
         return False
     return True
 
-        
-
 def del_ip_in_db(id_network): 
     ''' удаляем из БД Devices записи приндлежащие подсети '''
     devices_list = devices.query.filter_by(id_network = id_network).all()
@@ -156,10 +174,23 @@ def del_network(id_network):
         return True
     return False
 
+def create_network(network): 
+    ''' создаем подсеть и генерируем список ip адресов '''
+    #если вписали не начало подсети а какой-нить ip , то берем всё равно подсеть 
+    network.net = network.network
+    db.session.add(network) 
+    db.session.commit() 
+    if add_ip_in_db(network): 
+        print('Подсеть создана')
+        return True
+    else:
+        return False    
+
 
 
 @app.route('/all_networks', methods = ['GET', 'POST'])
 def all_networks():
+    s_form = SearchForm()
     all_networks = networks.query.all()
     if request.method == 'POST' :
         for key, val in request.form.items():
@@ -168,32 +199,30 @@ def all_networks():
                 return redirect(url_for('all_networks'))
             #elif val == 'Редактировать':
             #    return redirect(url_for('network', id=key)) 
+            elif key == 'search': 
+                return search(s_form.search.data)
             else:
                 flash('Неизвестный запрос', 'warning')
     return render_template('networks.html',
-                           networks = all_networks)
-
+                           networks = all_networks, 
+                           form = s_form)
 
 
 @app.route('/add_network', methods = ['GET', 'POST'])
 def add_network():
     form = AddNetworkForm()
     if form.validate_on_submit():
-        #spare_name = Spares.name.filter(form.name.data)
         if ipcalc.check_ip(form.net.data): 
             netw = networks(name = form.name.data,
             description = form.description.data,
             cidr = form.cidr.data,
             net = form.net.data)
-            #если вписали не начало подсети а какой-нить ip , то берем всё равно подсеть 
-            netw.net = netw.network
-            db.session.add(netw) 
-            db.session.commit() 
-            flash('Подсеть добавлена!!! ', 'success')
-            if add_ip_in_db(netw): 
+            if create_network(netw): 
+                flash('Подсеть добавлена!!! ', 'success')
                 return redirect(url_for('all_networks'))
             else: 
-                flash('Таблица IP адресов не создана!! ', 'danger')         
+                flash('Таблица IP адресов не создана!! ', 'danger')
+                 
         else: 
             flash('Введен некоректный адрес подсети!!! ', 'warning')
     elif request.method == 'POST':        
@@ -231,3 +260,12 @@ def edit_device():
         return json.dumps({'resp' : 'change ok'})
     print( device.type, device.owner)
     return json.dumps({'resp': 'not change'})
+
+@app.route('/excel_import', methods = ['GET', 'POST'])
+def excel_import():
+    file_path = os.path.join(UPLOAD_FOLDER_FILES,'seti.xlsx')
+    if excel.excel_parcing(file_path): 
+        return redirect(url_for('all_networks'))
+    else: 
+        return render_template('import_excel.html')
+

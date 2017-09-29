@@ -4,10 +4,9 @@
 
 
 
-
-<link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
-<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js"></script>
+ <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 
 <h1>Добавить расходники и запчасти</h1>
@@ -53,13 +52,10 @@
     <p><input type="submit" value="Добавить"></p>
 </form>
 
-
-
 <script type="text/javascript">
 
 $(function() {
     $("#autocomplete").autocomplete({
-        
         source:function(request, response) {
             $.getJSON("{{url_for('autocomplete')}}",{
                 q: request.term, // in flask, "q" will be the argument to look for using request.args
@@ -69,7 +65,7 @@ $(function() {
         },
         minLength: 2,
         select: function(event, ui) {
-            //$('#autocomplete').val(ui.item.value);
+            $('#autocomplete').val(ui.item.value);
             console.log(ui.item.value);  
             return false;
         }

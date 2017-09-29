@@ -13,7 +13,10 @@ SQLALCHEMY_DATABASE_URI = 'mysql://root:dthbabrfwbz2@localhost:3306/equipment'
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
 #парамерты для загрузки изображений
-UPLOAD_FOLDER = os.path.join(basedir,'app/static/images')
+UPLOAD_FOLDER_IMG = os.path.join(basedir,'app/static/images')
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'bmp'])
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+
+#директория для загрузки файлов
+UPLOAD_FOLDER_FILES = os.path.join(basedir,'app/static/files')
 

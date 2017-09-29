@@ -2,23 +2,13 @@
 
 {% block content %}
 
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 <link href="{{ url_for('static', filename = 'css/devtables.css') }}" rel="stylesheet">
 
-
- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
-<script src="//code.jquery.com/jquery-1.12.4.js"></script>
-<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-
-
 <div id=network>
-<h2>{{network.name}}</h2> 
+{% for network in networks %}
 <table>
-    <col width="8%">
-    <col width="10%">
-    <col width="20%;">
-    <col width="20%">
-    <col width="8%">
-    <col width="20%">
+<h2>{{network.name}}</h2>
 	<tr >
 		<th>IP адрес</th>
         <th>Тип оборудования</th>
@@ -27,7 +17,9 @@
         <th>Инв. номер</th>
         <th>Дополнительно</th>
     </tr>
-     {% for device in devices %}
+{% for device in results %}
+
+{% if network.id == device.id_network %}
     <tr>
     	<td {% if device.description == None %} class="free_ip" {% endif%}> {{device.ip}}</td>	
 
@@ -69,38 +61,12 @@
 
 
     </tr>  
+{% endif %}
+{% endfor %}
 
-    {% endfor %}
+ {% endfor %}
 </table>
 </div>
 
-
-
 <script src="{{ url_for('static', filename = 'js/edit_dev.js') }}"></script>
-
-
-<script type="text/javascript">
-
-$(function() {
-    $("[id ^= ownr]").autocomplete({
-        source:function(request, response) {
-            $.getJSON("{{url_for('autocomplete_users')}}",{
-                q: request.term, // in flask, "q" will be the argument to look for using request.args
-            }, function(data) {
-                response(data.matching_results); // matching_results from jsonify
-                console.log(data.matching_results)
-            });
-        },
-        minLength: 2,
-        select: function(event, ui) {
-            $(this).val(ui.item.value);
-            console.log(ui.item.value);  
-            return false;
-        }
-    });
-})
-
-</script>
-
 {% endblock %}
-

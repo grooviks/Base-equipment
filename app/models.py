@@ -1,7 +1,7 @@
 from app import db
 import json, os 
 from app import ipcalc
-from config import UPLOAD_FOLDER
+from config import UPLOAD_FOLDER_IMG, UPLOAD_FOLDER_FILES
 #from sqlalchemy.dialects.mysql import INTEGER
 
 def to_json(inst, cls):
@@ -48,8 +48,7 @@ class spares(db.Model):
     def img(self): 
         imgname = str(self.id) + '.jpeg' 
         return os.path.join('images/spares_img',imgname) \
-        if os.path.exists(os.path.join(UPLOAD_FOLDER,'spares_img', imgname)) else 'images/no_img.jpg'
-
+        if os.path.exists(os.path.join(UPLOAD_FOLDER_IMG,'spares_img', imgname)) else 'images/no_img.jpg'
 
 class devices(db.Model):
     __tablename__ = 'devices'
@@ -57,7 +56,7 @@ class devices(db.Model):
     description = db.Column(db.VARCHAR(300))
     type = db.Column(db.VARCHAR(200))
     comment = db.Column(db.TEXT)
-    number = db.Column(db.INTEGER)
+    number = db.Column(db.VARCHAR(30))
     owner = db.Column(db.VARCHAR(300))
     ip = db.Column(db.VARCHAR(300))
     id_network =  db.Column(db.Integer, db.ForeignKey('networks.id'))
@@ -90,6 +89,41 @@ class networks(db.Model):
     @property
     def network(self):
         return ".".join([str(octet) for octet in ipcalc.network(self)])
+        
+
+class users(db.Model):
+    """docstring for  users"""
+    __tablename__ = 'users'
+    id = db.Column(db.INTEGER, primary_key=True)
+    name = db.Column(db.VARCHAR(200))
+    lastname = db.Column(db.VARCHAR(200))
+    secondname = db.Column(db.VARCHAR(200))
+    notesname = db.Column(db.VARCHAR(50))
+    mail = db.Column(db.VARCHAR(200))
+    phone = db.Column(db.VARCHAR(20))
+    mobile_phone = db.Column(db.VARCHAR(20))
+    id_company = db.Column(db.INTEGER, db.ForeignKey('company.id'))
+    post = db.Column(db.VARCHAR(80))
+    hierarchy = db.Column(db.VARCHAR(300))
+    samaccountname = db.Column(db.VARCHAR(50))
+    work_object = db.Column(db.VARCHAR(300))
+    uniq_code = db.Column(db.VARCHAR(200))
+    dismiss = db.Column(db.Boolean, default=False, nullable=False)
+    #equipments = db.relationship('equipments', backref = 'users', lazy = 'dynamic')
+
+    def __repr__(self):
+        return "{} {} {}".format(self.name, self.secondname, self.lastname)
+
+
+
+
+class company(db.Model):
+    __tablename__ = 'company'
+    id = db.Column(db.INTEGER, primary_key=True)
+    name = db.Column(db.VARCHAR(300))
+    users = db.relationship('users', backref = 'company', lazy = 'dynamic')
+    #equipments = db.relationship('equipments', backref = 'users', lazy = 'dynamic')
+
         
 
 
