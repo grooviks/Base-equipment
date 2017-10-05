@@ -4,15 +4,15 @@
     <title>IT-Base</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="{{ url_for('static', filename = 'css/base.css') }}" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="{{ url_for('static', filename = 'css/base.css') }}" rel="stylesheet">
 </head>
 <body>
 
 
-    <div class="container"><h1>IT-Base Equipment</h1>
+    <div class="container"><h1>IT-Base</h1>
 
 
 <nav id="primary_nav_wrap">
@@ -24,11 +24,13 @@
       <li><a href="/all_spares">Просмотреть список</a></li>
     </ul>
   </li>
-  <li><a href="/all_networks">Сети</a>
+  <li><a href="/network_views/all">Сети</a>
     <ul>
     <li><a href="/add_network">Добавить</a></li>
-    <li><a href="/all_networks">Просмотреть список</a></li>
-  </ul>
+    <li><a href="/network_views/all">Все</a></li>
+    <li><a href="/network_views/servers">Сервера</a></li>
+    <li><a href="/network_views/objects">Объекты</a></li>
+    </ul>
   </li>
   <li><a href="/">Оборудование</a>
     <ul>
@@ -38,11 +40,21 @@
     <li><a href="/">Удалить</a></li>
     </ul>
   </li>
-    <li><a href="/users">Пользователи</a>
-  </li>
-    <li><a href="http://wiki-srv/">IT wiki</a>
+    <li><a href="/all_company">Пользователи</a>
+      <ul>
+         <li class="dir"><a href="/all_company">Все</a></li>
+      <li class="dir"><a href="#">По компании</a>
+        <ul>   
+          {% for company in company_list %}
+          <li><a href="{{ url_for('t_company', id = company.id) }}">{{ company.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </li>
+    </ul>
   </li>
 
+  <li><a href="http://wiki-srv/">IT wiki</a>
+  </li>
 </ul>
 </nav>
 

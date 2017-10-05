@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% for comp in comps %} 
+<h1>{{ comp.name }}</h1>
+
+{% for user in users %}
+
+{% if user.id_company == comp.id %}
+<div id="users">
+
+{{ user.lastname }} {{ user.name }} {{ user.secondname }}  {{ user.post }} {{ user.phone }}
+
+<div>
+
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{% endblock %}

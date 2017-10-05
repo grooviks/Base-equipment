@@ -78,6 +78,9 @@ def excel_parcing(file_path):
             description = name,
             cidr = cidr,
             net = net)
+		if len(networks.query.filter(networks.name.like('%' + str(name) + '%')).all()) !=0 : 
+			print('Network with name ', name, 'is exist!')
+			continue
 		
 		if app.views.create_network(netw):
 			print('Network create ok!')

@@ -1,15 +1,12 @@
 from flask import render_template, flash, redirect, url_for, request, json
-from app import app, db
-from app.forms import AddSpareForm, SearchForm, AddNetworkForm, DeviceForm, SearchForm
-from app.models import spares, networks, devices, users
+from app import app, db, ipcalc, excel
+from app.forms import AddSpareForm, SearchForm, AddNetworkForm, DeviceForm, ServerForm
+from app.models import spares, networks, devices, users, company, servers
 from flask import jsonify
 from werkzeug import secure_filename
 from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER_IMG, UPLOAD_FOLDER_FILES
 import os
 from PIL import Image
-from app import ipcalc
-from app import excel
-
 
 @app.route('/')
 @app.route('/index')
@@ -134,14 +131,14 @@ def add_ip_in_db(network):
     ''' заполняем бд devices записями с IP новой подсети'''
     for ip in ipcalc.range_ip(network): 
         try: 
-            device = devices(description = None,
-            type = None,
-            comment = None,
-            number = None, 
-            owner = None,
-            ip = ip,
-            id_network = network.id
-            )
+            if network.net_type: 
+                device = servers(ip = ip,
+                id_network = network.id)
+                print(device.ip)
+            else: 
+                device = devices(ip = ip,
+                id_network = network.id
+                )
             db.session.add(device) 
         except: 
             return False
@@ -151,9 +148,13 @@ def add_ip_in_db(network):
         return False
     return True
 
-def del_ip_in_db(id_network): 
-    ''' удаляем из БД Devices записи приндлежащие подсети '''
-    devices_list = devices.query.filter_by(id_network = id_network).all()
+def del_ip_in_db(network): 
+    ''' удаляем из таблицы Devices или Servers записи приндлежащие подсети '''
+
+    if network.net_type: 
+        devices_list = servers.query.filter_by(networks = network).all()
+    else:
+        devices_list = devices.query.filter_by(networks = network).all()
     try: 
         for device in devices_list: 
             db.session.delete(device)
@@ -166,9 +167,10 @@ def del_ip_in_db(id_network):
     return True
 
 def del_network(id_network): 
-    ''' удаляем из БД networks подсеть по id '''
+    ''' удаляем из таблцы networks подсеть по id '''
     network = networks.query.filter_by(id = id_network).first()
-    if del_ip_in_db(id_network): 
+    print(network.id)
+    if del_ip_in_db(network): 
         db.session.delete(network)
         db.session.commit()
         return True
@@ -188,15 +190,20 @@ def create_network(network):
 
 
 
-@app.route('/all_networks', methods = ['GET', 'POST'])
-def all_networks():
+@app.route('/network_views/<types>', methods = ['GET', 'POST'])
+def network_views(types):
     s_form = SearchForm()
-    all_networks = networks.query.all()
+    if types == 'servers': 
+        all_networks = networks.query.filter_by(net_type = 1).all()
+    elif types == 'objects':
+        all_networks = networks.query.filter_by(net_type = 0).all()
+    else: 
+        all_networks = networks.query.all()
     if request.method == 'POST' :
         for key, val in request.form.items():
             if val == 'Удалить': 
                 del_network(key)
-                return redirect(url_for('all_networks'))
+                return redirect(url_for('network_views', types = types))
             #elif val == 'Редактировать':
             #    return redirect(url_for('network', id=key)) 
             elif key == 'search': 
@@ -216,10 +223,11 @@ def add_network():
             netw = networks(name = form.name.data,
             description = form.description.data,
             cidr = form.cidr.data,
-            net = form.net.data)
+            net = form.net.data, 
+            net_type = form.select_types.data)
             if create_network(netw): 
                 flash('Подсеть добавлена!!! ', 'success')
-                return redirect(url_for('all_networks'))
+                return redirect(url_for('network_views', types = 'all'))
             else: 
                 flash('Таблица IP адресов не создана!! ', 'danger')
                  
@@ -233,32 +241,63 @@ def add_network():
 
 @app.route('/network/<id>', methods = ['GET', 'POST'])
 def network(id):
-
-    form = DeviceForm()
     network = networks.query.filter_by(id = id).first()
-    devices_list = devices.query.filter_by(id_network = id).all()
-    return render_template('network.html',
+    if network.net_type: 
+        servers_list = servers.query.filter_by(id_network = id).all()
+        form = ServerForm()
+        return render_template('servers.html',
+                            network = network, 
+                            servers = servers_list,
+                            form = form
+                            )
+    else : 
+        form = DeviceForm()
+        devices_list = devices.query.filter_by(id_network = id).all()
+        return render_template('network.html',
                             network = network, 
                             devices = devices_list,
                             form = form
                             )
 
 
+@app.route('/all_company', methods = ['GET', 'POST'])
+def all_company():
+    comps_list = company.query.all()
+    users_list = users.query.all()
+    return render_template('all_company.html',
+                            comps = comps_list, 
+                            users = users_list
+                           )
+
+
+@app.route('/company/<id>', methods = ['GET', 'POST'])
+def t_company(id):
+    #form = DeviceForm()
+    comp = company.query.filter_by(id = id).first()
+    users_list = users.query.filter_by(id_company = id).all()
+    return render_template('company.html',
+                            comp = comp, 
+                            users = users_list
+                            )
+
 @app.route('/edit_device', methods = ['GET', 'POST'])
 def edit_device():
     ''' получает POST запросом id оборудования в БД , меняемое свойство и значение его 
         проверяет изменилось ли оно , если да то записываем в БД '''
+ 
     dev_id = request.form['id'][4:]
     dev_property = request.form['name']
     value = request.form['value']
-    print(dev_id, dev_property, value)
-    device = devices.query.filter_by(id = dev_id).first()
+
+    #каждый раз при запросе лазить в БД чтобы определить тип сети не комильфо, надо переделать
+    if networks.query.filter_by(id = request.referrer.split('/')[-1]).first().net_type : 
+        device = servers.query.filter_by(id = dev_id).first()
+    else: 
+        device = devices.query.filter_by(id = dev_id).first()
     if getattr(device, dev_property) != value:
         setattr(device, dev_property, value)
         db.session.commit()
-        print(device.number)
         return json.dumps({'resp' : 'change ok'})
-    print( device.type, device.owner)
     return json.dumps({'resp': 'not change'})
 
 @app.route('/excel_import', methods = ['GET', 'POST'])
@@ -268,4 +307,17 @@ def excel_import():
         return redirect(url_for('all_networks'))
     else: 
         return render_template('import_excel.html')
+
+@app.context_processor
+def company_list(): 
+    '''Список компаний в которых больше 3х человек для отображения в меню'''
+    return {"company_list":[comp for comp in company.query.all() \
+        if len(users.query.filter_by(company = comp).all()) > 3 \
+        and comp.name is not None ]}
+
+@app.route('/network_on_type/<types>', methods = ['GET', 'POST'])
+def network_on_type(types):
+    s_form = SearchForm()
+   
+
 

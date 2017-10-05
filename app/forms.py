@@ -82,6 +82,7 @@ class AddNetworkForm(Form):
     cidr = SelectField(choices=masks_list)
     description = StringField('description', widget=TextArea(), validators=[optional(), length(max=600)])
     net = StringField('net', validators= [DataRequired()])
+    select_types = BooleanField("types")
 
 class DeviceForm(Form):
     description = StringField('description', validators= [DataRequired()])
@@ -89,3 +90,16 @@ class DeviceForm(Form):
     comment = StringField('comment')
     owner = StringField('owner', validators= [DataRequired()])
     number = IntegerField('number')
+
+class ServerForm(Form):
+    description = StringField('description', validators= [DataRequired()])
+    os = StringField('os')
+    vmhost = StringField('vmhost')
+    ipmi = StringField('ipmi')
+    ipmi_port = IntegerField('ipmi_port')
+    ssh_port = IntegerField('ssh_port')
+    external_ip = StringField('external_ip')
+    services = StringField('services')
+    dnsname = StringField('dnsname', validators= [DataRequired()])
+
+

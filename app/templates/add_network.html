@@ -2,29 +2,12 @@
 
 {% block content %}
 
-<style type="text/css">
- body{font:medium Open Sans,Arial,sans-serif}
- .ui-autocomplete {
-    border-radius: 0px;
-}
-.ui-autocomplete.source:hover {
-    background: #454545;
-}
-
-.ui-menu .ui-menu-item a{
-    height:24px;
-    font-size:16px;}
-
-span.required {
-    color: red;
-}
-</style>
 
 <h1>Добавить новую подсеть</h1>
 <form enctype=multipart/form-data method=POST name="add_network">
     {{form.hidden_tag()}}
     <p><span class="required">*</span>
-        Наименование оборудования<br>
+        Наименование подсети<br>
         {{form.name(size=69)}}<br>
     </p>
 
@@ -41,11 +24,14 @@ span.required {
         Комментарий <br>
         {{form.description(cols="71", rows="5")}}
     </p>
-    
-
-
-
-    <p><input type="submit" value="Добавить"></p>
+    <br>
+    <label>
+     {{ form.select_types(id="checkbox",class_="checkbox", value="1") }}
+    <span class="checkbox-custom"></span>
+    <span class="label">Cерверное оборудование</span>
+     </label>
+     <br>
+    <p> <br> <input type="submit" value="Добавить"></p>
 </form>
 
 {% endblock %}

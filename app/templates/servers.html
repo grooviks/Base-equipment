@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<link href="{{ url_for('static', filename = 'css/devtables.css') }}" rel="stylesheet">
+
+
+ <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/jquery-1.12.4.js"></script>
+<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+
+<script src="{{ url_for('static', filename = 'js/edit_dev.js') }}"></script>
+
+<div id=network>
+<h2>{{network.name}}</h2> 
+<table>
+    <col width="8%">
+    <col width="12%">
+    <col width="8%;">
+    <col width="8%">
+    <col width="24%">
+    <col width="5%">
+    <col width="9%">
+    <col width="5%">
+	<tr >
+		<th>IP адрес</th>
+        <th>DNS</th>
+        <th>ОС</th>
+        <th>Хост VM</th>
+        <th>Сервис</th>
+        <th>SSH порт</th>
+        <th>IPMI адрес</th>
+        <th>IPMI порт</th>
+        <th>Белые адреса</th>
+    </tr>
+     {% for server in servers %}
+    <tr>
+    	<td {% if server.dnsname == None %} class="free_ip" {% endif%}> {{server.ip}}</td>	
+
+        {% if server.dnsname == None %} 
+        {% set srv_dns = '' %}
+        {% else %}
+        {% set srv_dns = server.dnsname %}
+        {% endif %}
+    	<td>{{form.dnsname(class_="input", id="dnsn%s"%server.id, value=srv_dns)}}</td>
+
+    	{% if server.os == None %} 
+        {% set srv_os = '' %}
+        {% else %}
+        {% set srv_os = server.description %}
+        {% endif %}
+    	<td>{{form.os(class_="input", id="opsy%s"%server.id, value=srv_os)}}</td>
+
+    	{% if server.vmhost == None %} 
+        {% set srv_host = '' %}
+        {% else %}
+        {% set srv_host = server.vmhost %}
+        {% endif %}
+    	<td>{{form.vmhost(class_="input", id="host%s"%server.id, value=srv_host)}}</td>
+
+    	{% if server.services == None %} 
+        {% set srv_serv = '' %}
+        {% else %}
+        {% set srv_serv = server.services %}
+        {% endif %}
+    	<td>{{form.services(class_="input", id="serv%s"%server.id, value=srv_serv)}}</td>
+
+    	{% if server.ssh_port == None %} 
+        {% set srv_sshp = '' %}
+        {% else %}
+        {% set srv_sshp = server.ssh_port %}
+        {% endif %}
+    	<td>{{form.ssh_port(class_="input", id="sshp%s"%server.id, value=srv_sshp)}}</td>
+
+    	{% if server.ipmi == None %} 
+        {% set srv_ipmi = '' %}
+        {% else %}
+        {% set srv_ipmi = server.ipmi %}
+        {% endif %}
+    	<td>{{form.ipmi(class_="input", id="ipmi%s"%server.id, value=srv_ipmi)}}</td>
+
+    	{% if server.ipmi_port == None %} 
+        {% set srv_ipmp = '' %}
+        {% else %}
+        {% set srv_ipmp = server.ipmi_port %}
+        {% endif %}
+    	<td>{{form.ipmi_port(class_="input", id="ipmp%s"%server.id, value=srv_ipmp)}}</td>
+
+    	{% if server.external_ip == None %} 
+        {% set srv_exip = '' %}
+        {% else %}
+        {% set srv_exip = server.external_ip %}
+        {% endif %}
+    	<td>{{form.external_ip(class_="input", id="exip%s"%server.id, value=srv_exip)}}</td>
+	    
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+<script src="{{ url_for('static', filename = 'js/edit_dev.js') }}"></script>
+
+<script type="text/javascript">
+
+$(function() {
+    $("[id ^= ownr]").autocomplete({
+        source:function(request, response) {
+            $.getJSON("{{url_for('autocomplete_users')}}",{
+                q: request.term, // in flask, "q" will be the argument to look for using request.args
+            }, function(data) {
+                response(data.matching_results); // matching_results from jsonify
+                console.log(data.matching_results)
+            });
+        },
+        minLength: 2,
+        select: function(event, ui) {
+            $(this).val(ui.item.value);
+            console.log(ui.item.value);  
+            return false;
+        }
+    });
+})
+
+</script>
+
+{% endblock %}
