@@ -9,7 +9,7 @@ SECRET_KEY = 'YOUR_RANDOM_SECRET_KEY'
 
 #SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
 #должен быть настроен mysql и быть база equipment
-SQLALCHEMY_DATABASE_URI = 'mysql://root:dthbabrfwbz2@localhost:3306/equipment'
+SQLALCHEMY_DATABASE_URI = 'mysql://mysqluser:password@localhost:3306/equipment'
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
 #парамерты для загрузки изображений
